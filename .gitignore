@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv
+env/
+venv/
+ENV/
+
+# Roblox
+*.rbxl
+*.rbxlx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output
+output/demo_output.json
+output/demo_placer.lua
+image_processor/test_demo.png
