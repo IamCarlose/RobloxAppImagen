@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RobloxAppImagen — Imagen a 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #0a0b0f;
+      --surface:   #12141a;
+      --card:      #181b24;
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #6c63ff;
+      --accent2:   #ff6b6b;
+      --accent3:   #43e97b;
+      --text:      #e8eaf0;
+      --muted:     #6b7280;
+      --glass:     rgba(255,255,255,0.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* === BACKGROUND BLOBS === */
+    .bg-blobs {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    }
+    .blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(120px); opacity: 0.18;
+      animation: float 8s ease-in-out infinite;
+    }
+    .blob-1 { width:500px;height:500px;background:#6c63ff;top:-100px;left:-100px; animation-delay:0s; }
+    .blob-2 { width:400px;height:400px;background:#ff6b6b;bottom:-80px;right:-80px; animation-delay:3s; }
+    .blob-3 { width:300px;height:300px;background:#43e97b;top:40%;left:60%; animation-delay:1.5s; }
+    @keyframes float {
+      0%,100% { transform: translateY(0) scale(1); }
+      50%      { transform: translateY(-30px) scale(1.05); }
+    }
+
+    /* === LAYOUT === */
+    .wrapper { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px 60px; }
+
+    /* === HEADER === */
+    header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 32px 0 40px;
+    }
+    .logo {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, #6c63ff, #ff6b6b);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; flex-shrink: 0;
+      box-shadow: 0 0 40px rgba(108,99,255,0.4);
+      animation: pulse-logo 3s ease-in-out infinite;
+    }
+    @keyframes pulse-logo {
+      0%,100% { box-shadow: 0 0 40px rgba(108,99,255,0.4); }
+      50%      { box-shadow: 0 0 70px rgba(108,99,255,0.7); }
+    }
+    header h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+    header h1 span { background: linear-gradient(90deg,#6c63ff,#ff6b6b,#43e97b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    header p { font-size: 14px; color: var(--muted); margin-top: 4px; }
+    .header-badge {
+      margin-left: auto;
+      background: linear-gradient(135deg, rgba(108,99,255,0.2), rgba(255,107,107,0.2));
+      border: 1px solid rgba(108,99,255,0.4);
+      color: #a89dff; font-size: 12px; font-weight: 600;
+      padding: 6px 14px; border-radius: 20px; white-space: nowrap;
+    }
+
+    /* === MAIN GRID === */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* === CARDS === */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+    }
+    .card-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-header .icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .card-header h2 { font-size: 15px; font-weight: 600; }
+    .card-body { padding: 24px; }
+
+    /* === DROP ZONE === */
+    #dropZone {
+      border: 2px dashed rgba(108,99,255,0.4);
+      border-radius: 16px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: rgba(108,99,255,0.04);
+      position: relative;
+    }
+    #dropZone:hover, #dropZone.dragover {
+      border-color: #6c63ff;
+      background: rgba(108,99,255,0.1);
+      transform: scale(1.01);
+    }
+    #dropZone .drop-icon { font-size: 48px; margin-bottom: 12px; display: block; }
+    #dropZone p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+    #dropZone strong { color: #6c63ff; }
+    #fileInput { display: none; }
+
+    /* === IMAGE PREVIEW (small) === */
+    #thumbWrap {
+      display: none; margin-top: 16px; border-radius: 12px; overflow: hidden;
+      position: relative;
+    }
+    #thumb { width: 100%; height: 180px; object-fit: cover; display: block; }
+    .thumb-badge {
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+      border-radius: 8px; padding: 4px 10px; font-size: 11px; color: #ccc;
+    }
+    .thumb-change {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(108,99,255,0.85); border: none; border-radius: 8px;
+      color: white; font-size: 11px; font-weight: 600; padding: 5px 10px;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .thumb-change:hover { opacity: 0.8; }
+
+    /* === CONTROLS === */
+    .control-group { margin-bottom: 20px; }
+    .control-group label {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--text);
+    }
+    .control-group label span { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    input[type="range"] {
+      width: 100%; -webkit-appearance: none;
+      height: 6px; border-radius: 3px;
+      background: linear-gradient(to right, #6c63ff 0%, #6c63ff var(--pct,50%), #2a2d3a var(--pct,50%), #2a2d3a 100%);
+      outline: none; cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      border-radius: 50%; background: #6c63ff;
+      box-shadow: 0 0 10px rgba(108,99,255,0.6);
+      transition: transform 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+    .toggle-group {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .toggle-btn {
+      padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--muted);
+      font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+      text-align: center;
+    }
+    .toggle-btn.active {
+      background: rgba(108,99,255,0.2); border-color: #6c63ff; color: #a89dff;
+    }
+
+    /* === GENERATE BUTTON === */
+    #generateBtn {
+      width: 100%; padding: 14px;
+      border-radius: 14px; border: none; cursor: pointer;
+      font-size: 15px; font-weight: 700; letter-spacing: 0.3px;
+      background: linear-gradient(135deg, #6c63ff, #a855f7);
+      color: white;
+      box-shadow: 0 8px 30px rgba(108,99,255,0.4);
+      transition: all 0.25s;
+      position: relative; overflow: hidden;
+      margin-top: 8px;
+    }
+    #generateBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 40px rgba(108,99,255,0.55);
+    }
+    #generateBtn:active:not(:disabled) { transform: translateY(0); }
+    #generateBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #generateBtn .btn-shimmer {
+      position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+      transform: translateX(-100%);
+      transition: transform 0.6s;
+    }
+    #generateBtn:hover .btn-shimmer { transform: translateX(100%); }
+
+    /* === RIGHT COLUMN === */
+    .right-col { display: flex; flex-direction: column; gap: 24px; }
+
+    /* === CANVAS PREVIEW === */
+    #previewWrap {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 300px;
+    }
+    #pixelCanvas {
+      border-radius: 12px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      max-width: 100%; max-height: 450px;
+      box-shadow: 0 0 60px rgba(108,99,255,0.3);
+      transition: box-shadow 0.5s;
+    }
+    #pixelCanvas.glowing { box-shadow: 0 0 100px rgba(108,99,255,0.5), 0 0 40px rgba(255,107,107,0.2); }
+    .preview-placeholder {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 16px; color: var(--muted); text-align: center; padding: 60px 40px;
+    }
+    .preview-placeholder .ph-icon { font-size: 64px; opacity: 0.4; }
+    .preview-placeholder p { font-size: 14px; line-height: 1.6; }
+
+    /* === STATS BAR === */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 12px; margin-top: 0;
+    }
+    .stat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px; text-align: center;
+      transition: border-color 0.3s;
+    }
+    .stat.active { border-color: rgba(108,99,255,0.4); }
+    .stat .val { font-size: 22px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+    .stat .val.purple { color: #6c63ff; }
+    .stat .val.red    { color: #ff6b6b; }
+    .stat .val.green  { color: #43e97b; }
+    .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* === SCRIPT OUTPUT === */
+    .script-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .script-actions { display: flex; gap: 8px; }
+    .script-btn {
+      padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text);
+      font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .script-btn:hover { background: rgba(108,99,255,0.15); border-color: #6c63ff; color: #a89dff; }
+    .script-btn.success { background: rgba(67,233,123,0.15); border-color: #43e97b; color: #43e97b; }
+
+    #scriptOutput {
+      width: 100%; height: 220px;
+      background: #0d0f16; border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      color: #a89dff; resize: vertical; outline: none;
+      line-height: 1.7; overflow-y: auto;
+    }
+    #scriptOutput::placeholder { color: var(--muted); font-family: 'Inter', sans-serif; font-size: 13px; }
+
+    /* === STEPS GUIDE === */
+    .steps { display: flex; flex-direction: column; gap: 12px; }
+    .step {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+    .step.done { border-color: rgba(67,233,123,0.3); background: rgba(67,233,123,0.05); }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(108,99,255,0.2); border: 1px solid rgba(108,99,255,0.4);
+      color: #6c63ff; font-weight: 700; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step.done .step-num { background: rgba(67,233,123,0.2); border-color: #43e97b; color: #43e97b; }
+    .step-text strong { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
+    .step-text p { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+    /* === PROGRESS === */
+    #progressWrap { display: none; margin-top: 16px; }
+    .progress-bar-bg {
+      height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #6c63ff, #a855f7, #43e97b);
+      border-radius: 3px; transition: width 0.3s;
+      animation: shimmer 1.5s linear infinite;
+      background-size: 200% 100%;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    #progressLabel { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    /* === Toasts === */
+    #toast {
+      position: fixed; bottom: 32px; right: 32px;
+      background: rgba(67,233,123,0.15); border: 1px solid #43e97b;
+      color: #43e97b; padding: 12px 20px; border-radius: 12px;
+      font-size: 14px; font-weight: 600;
+      transform: translateY(60px); opacity: 0;
+      transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+      z-index: 999; backdrop-filter: blur(12px);
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- Background blobs -->
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="wrapper">
+  <!-- HEADER -->
+  <header>
+    <div class="logo">🎮</div>
+    <div>
+      <h1><span>RobloxAppImagen</span></h1>
+      <p>Convierte cualquier imagen en una estructura 3D de Roblox Studio</p>
+    </div>
+    <div class="header-badge">v1.0 — Powered by Canvas API</div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT PANEL -->
+    <div style="display:flex;flex-direction:column;gap:24px;">
+
+      <!-- Upload Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background:rgba(108,99,255,0.15);">📁</div>
+          <h2>Cargar Imagen</h2>
+        </div>
+        <div class="card-body">
+          <div id="dropZone">
+            <span class="drop-icon">🖼️</span>
+            <p><strong>Arrastra tu imagen aquí</strong><br/>o haz clic para seleccionar<br/><br/>PNG, JPG, WEBP, BMP, GIF</p>
+            <input type="file" id="fileInput" accept="image/*"/>
+          </div>
+          <div id="thumbWrap">
+            <img id="thumb" src="" alt="preview"/>
+            <div class="thumb-badge" id="thumbBadge">—</div>
+            <button class="thumb-change" onclick="resetImage()">Cambiar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background:rgba(255,107,107,0.15);">⚙️</div>
+          <h2>Configuración</h2>
+        </div>
+        <div class="card-body">
+          <div class="control-group">
+            <label>Resolución de píxeles <span id="sizeLabel">32 × 32</span></label>
+            <input type="range" id="sizeSlider" min="4" max="128" value="32" step="4"/>
+          </div>
+          <div class="control-group">
+            <label>Tamaño de cada parte <span id="partLabel">1 stud</span></label>
+            <input type="range" id="partSlider" min="1" max="5" value="1" step="0.5"/>
+          </div>
+          <div class="control-group">
+            <label style="margin-bottom:10px;">Modo de color</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" id="btnColor3" onclick="setMode('color3')">🎨 Color3 (exacto)</button>
+              <button class="toggle-btn" id="btnBrick" onclick="setMode('brickcolor')">🧱 BrickColor</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label>Nombre del modelo en Studio</label>
+            <input id="modelName" type="text" value="MiImagen" style="
+              width:100%;padding:10px 12px;border-radius:10px;
+              background:var(--surface);border:1px solid var(--border);
+              color:var(--text);font-size:13px;outline:none;font-family:inherit;
+            " placeholder="MiImagen"/>
+          </div>
+
+          <!-- Progress -->
+          <div id="progressWrap">
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+            <div id="progressLabel">Procesando...</div>
+          </div>
+
+          <button id="generateBtn" onclick="generateAll()">
+            <div class="btn-shimmer"></div>
+            ✨ Generar Script para Roblox
+          </button>
+        </div>
+      </div>
+
+      <!-- Steps guide -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background:rgba(67,233,123,0.15);">📋</div>
+          <h2>Pasos a seguir</h2>
+        </div>
+        <div class="card-body">
+          <div class="steps">
+            <div class="step" id="step1">
+              <div class="step-num">1</div>
+              <div class="step-text">
+                <strong>Carga tu imagen</strong>
+                <p>Arrastra una foto o haz clic en el área de carga.</p>
+              </div>
+            </div>
+            <div class="step" id="step2">
+              <div class="step-num">2</div>
+              <div class="step-text">
+                <strong>Ajusta la configuración</strong>
+                <p>Elige la resolución y el modo de color.</p>
+              </div>
+            </div>
+            <div class="step" id="step3">
+              <div class="step-num">3</div>
+              <div class="step-text">
+                <strong>Genera el script</strong>
+                <p>Presiona el botón morado y espera la vista previa.</p>
+              </div>
+            </div>
+            <div class="step" id="step4">
+              <div class="step-num">4</div>
+              <div class="step-text">
+                <strong>Copia y pega en Studio</strong>
+                <p>Roblox Studio → View → Command Bar → Pega y Enter.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat" id="statParts">
+          <div class="val purple" id="statPartsVal">—</div>
+          <div class="lbl">Partes totales</div>
+        </div>
+        <div class="stat" id="statRes">
+          <div class="val red" id="statResVal">—</div>
+          <div class="lbl">Resolución</div>
+        </div>
+        <div class="stat" id="statMode">
+          <div class="val green" id="statModeVal">Color3</div>
+          <div class="lbl">Modo color</div>
+        </div>
+      </div>
+
+      <!-- Canvas Preview -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background:rgba(108,99,255,0.15);">🖥️</div>
+          <h2>Vista Previa de Píxeles</h2>
+        </div>
+        <div class="card-body" style="padding:20px;">
+          <div id="previewWrap">
+            <div class="preview-placeholder" id="placeholder">
+              <span class="ph-icon">🎮</span>
+              <p>Aquí verás cómo queda tu imagen<br/>convertida en píxeles de Roblox<br/><br/><strong style="color:var(--accent);">Carga una imagen y presiona "Generar"</strong></p>
+            </div>
+            <canvas id="pixelCanvas" style="display:none;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Script Output -->
+      <div class="card">
+        <div class="card-header">
+          <div class="script-header" style="width:100%;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="icon" style="background:rgba(67,233,123,0.15);">📜</div>
+              <h2>Script Luau para Roblox Studio</h2>
+            </div>
+            <div class="script-actions">
+              <button class="script-btn" id="copyBtn" onclick="copyScript()">📋 Copiar</button>
+              <button class="script-btn" id="dlBtn" onclick="downloadScript()">⬇️ Descargar</button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="scriptOutput" readonly placeholder="El script Luau aparecerá aquí después de presionar 'Generar'...&#10;&#10;Puedes copiarlo directamente y pegarlo en el Command Bar de Roblox Studio."></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Hidden canvas for processing -->
+<canvas id="processorCanvas" style="display:none;"></canvas>
+
+<script>
+// ================================================================
+// STATE
+// ================================================================
+let currentImage = null;
+let colorMode = 'color3';
+let generatedScript = '';
+
+const BRICK_COLORS = {
+  "White":            [242,243,243], "Grey":             [161,165,162],
+  "Light stone grey": [229,228,223], "Dark stone grey":  [99,95,98],
+  "Black":            [27,42,52],    "Dark red":         [106,29,20],
+  "Brick red":        [143,76,42],   "Bright red":       [196,40,28],
+  "Medium red":       [218,134,122], "Salmon":           [255,148,148],
+  "Bright orange":    [218,133,65],  "Nougat":           [204,142,105],
+  "Bright yellow":    [231,217,86],  "Bright green":     [75,151,75],
+  "Sand green":       [120,144,130], "Dark green":       [39,70,45],
+  "Bright blue":      [13,105,172],  "Medium blue":      [110,153,202],
+  "Sky blue":         [102,166,189], "Dark blue":        [20,43,111],
+  "Reddish brown":    [105,64,40],   "Brown":            [124,92,70],
+  "Dark orange":      [168,81,18],   "Bright violet":    [107,50,124],
+  "Lavender":         [160,150,197], "Hot pink":         [255,0,191],
+  "Dark pink":        [220,144,149], "Light blue":       [193,223,240],
+  "Teal":             [26,182,162],  "Lime green":       [0,255,0],
+  "Gold":             [239,184,56],  "Really red":       [255,0,0],
+  "Really blue":      [0,32,160],    "Really black":     [17,17,17],
+  "Pearl gold":       [229,195,97],  "Cyan":             [0,255,255],
+};
+
+function nearestBrickColor(r,g,b) {
+  let bestName = 'White', bestDist = Infinity;
+  for (const [name,[pr,pg,pb]] of Object.entries(BRICK_COLORS)) {
+    const d = (r-pr)**2 + (g-pg)**2 + (b-pb)**2;
+    if (d < bestDist) { bestDist = d; bestName = name; }
+  }
+  return bestName;
+}
+
+// ================================================================
+// INIT
+// ================================================================
+const sizeSlider = document.getElementById('sizeSlider');
+const partSlider = document.getElementById('partSlider');
+
+sizeSlider.addEventListener('input', updateSizeLabel);
+partSlider.addEventListener('input', updatePartLabel);
+
+function updateSizeLabel() {
+  const v = parseInt(sizeSlider.value);
+  document.getElementById('sizeLabel').textContent = `${v} × ${v}`;
+  updateSliderFill(sizeSlider);
+  updateLivePreview();
+}
+function updatePartLabel() {
+  const v = parseFloat(partSlider.value);
+  document.getElementById('partLabel').textContent = `${v} stud${v>1?'s':''}`;
+  updateSliderFill(partSlider);
+}
+function updateSliderFill(el) {
+  const min = parseFloat(el.min), max = parseFloat(el.max), val = parseFloat(el.value);
+  const pct = ((val - min) / (max - min) * 100).toFixed(1);
+  el.style.setProperty('--pct', pct + '%');
+}
+updateSliderFill(sizeSlider);
+updateSliderFill(partSlider);
+
+function setMode(m) {
+  colorMode = m;
+  document.getElementById('btnColor3').classList.toggle('active', m === 'color3');
+  document.getElementById('btnBrick').classList.toggle('active', m === 'brickcolor');
+  document.getElementById('statModeVal').textContent = m === 'color3' ? 'Color3' : 'BrickColor';
+}
+
+// ================================================================
+// FILE HANDLING
+// ================================================================
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadFile(f);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) loadFile(fileInput.files[0]);
+});
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      currentImage = img;
+      document.getElementById('thumb').src = e.target.result;
+      document.getElementById('thumbBadge').textContent = `${img.width}×${img.height}px — ${(file.size/1024).toFixed(0)} KB`;
+      document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('thumbWrap').style.display = 'block';
+      document.getElementById('step1').classList.add('done');
+      updateLivePreview();
+      showToast('¡Imagen cargada! Ajusta la configuración y presiona Generar.');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetImage() {
+  currentImage = null;
+  document.getElementById('dropZone').style.display = '';
+  document.getElementById('thumbWrap').style.display = 'none';
+  document.getElementById('placeholder').style.display = '';
+  document.getElementById('pixelCanvas').style.display = 'none';
+  document.getElementById('step1').classList.remove('done');
+  document.getElementById('step2').classList.remove('done');
+  document.getElementById('step3').classList.remove('done');
+  fileInput.value = '';
+  generatedScript = '';
+  document.getElementById('scriptOutput').value = '';
+  document.getElementById('statPartsVal').textContent = '—';
+  document.getElementById('statResVal').textContent = '—';
+}
+
+// ================================================================
+// LIVE PREVIEW (fast, just shows pixelated image)
+// ================================================================
+function updateLivePreview() {
+  if (!currentImage) return;
+  const size = parseInt(sizeSlider.value);
+  const proc = document.getElementById('processorCanvas');
+  const canvas = document.getElementById('pixelCanvas');
+  const aspect = currentImage.width / currentImage.height;
+  let w = size, h = size;
+  if (aspect > 1) h = Math.round(size / aspect);
+  else           w = Math.round(size * aspect);
+  w = Math.max(1, w); h = Math.max(1, h);
+
+  proc.width = w; proc.height = h;
+  const pctx = proc.getContext('2d');
+  pctx.drawImage(currentImage, 0, 0, w, h);
+
+  // Render pixelated on display canvas
+  const SCALE = Math.min(Math.floor(480 / Math.max(w, h)), 12);
+  canvas.width  = w * SCALE;
+  canvas.height = h * SCALE;
+  const ctx = canvas.getContext('2d');
+  const data = pctx.getImageData(0, 0, w, h).data;
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      const i = (row*w + col)*4;
+      const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3];
+      ctx.fillStyle = a < 128 ? '#ffffff' : `rgb(${r},${g},${b})`;
+      ctx.fillRect(col*SCALE, row*SCALE, SCALE, SCALE);
+      // Subtle grid
+      if (SCALE >= 4) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(col*SCALE+0.5, row*SCALE+0.5, SCALE-1, SCALE-1);
+      }
+    }
+  }
+  document.getElementById('placeholder').style.display = 'none';
+  canvas.style.display = 'block';
+  canvas.classList.add('glowing');
+  document.getElementById('statPartsVal').textContent = (w*h).toLocaleString();
+  document.getElementById('statResVal').textContent = `${w}×${h}`;
+  document.querySelectorAll('.stat').forEach(s => s.classList.add('active'));
+}
+
+sizeSlider.addEventListener('input', updateLivePreview);
+
+// ================================================================
+// GENERATE FULL SCRIPT
+// ================================================================
+async function generateAll() {
+  if (!currentImage) { showToast('⚠️ Primero carga una imagen.'); return; }
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Procesando...';
+
+  showProgress(true);
+  setProgress(10, 'Redimensionando imagen...');
+  await delay(50);
+
+  const size = parseInt(sizeSlider.value);
+  const partSize = parseFloat(partSlider.value);
+  const modelName = document.getElementById('modelName').value || 'MiImagen';
+
+  const proc = document.getElementById('processorCanvas');
+  const aspect = currentImage.width / currentImage.height;
+  let w = size, h = size;
+  if (aspect > 1) h = Math.round(size / aspect);
+  else            w = Math.round(size * aspect);
+  w = Math.max(1, w); h = Math.max(1, h);
+
+  proc.width = w; proc.height = h;
+  proc.getContext('2d').drawImage(currentImage, 0, 0, w, h);
+  const imageData = proc.getContext('2d').getImageData(0, 0, w, h).data;
+
+  setProgress(30, 'Extrayendo colores de píxeles...');
+  await delay(50);
+
+  // Build pixel data
+  const rows = [];
+  for (let row = 0; row < h; row++) {
+    const cols = [];
+    for (let col = 0; col < w; col++) {
+      const i = (row*w + col)*4;
+      const r=imageData[i], g=imageData[i+1], b=imageData[i+2], a=imageData[i+3];
+      const fr = a < 128 ? 255 : r;
+      const fg = a < 128 ? 255 : g;
+      const fb = a < 128 ? 255 : b;
+      if (colorMode === 'brickcolor') {
+        cols.push(nearestBrickColor(fr,fg,fb));
+      } else {
+        cols.push([fr,fg,fb]);
+      }
+    }
+    rows.push(cols);
+  }
+
+  setProgress(60, 'Generando script Luau...');
+  await delay(50);
+
+  // Build Lua script
+  const now = new Date().toLocaleString('es');
+  let lines = [];
+  lines.push(`-- ============================================================`);
+  lines.push(`-- RobloxAppImagen -- Script Generado Automaticamente`);
+  lines.push(`-- Imagen: ${currentImage.src ? currentImage.src.substring(0,60)+'...' : 'imagen.png'}`);
+  lines.push(`-- Resolucion: ${w}x${h} | Partes: ${w*h} | Modo: ${colorMode}`);
+  lines.push(`-- Generado: ${now}`);
+  lines.push(`-- Pega este script en: Roblox Studio -> View -> Command Bar`);
+  lines.push(`-- ============================================================`);
+  lines.push(``);
+  lines.push(`local Workspace = game:GetService('Workspace')`);
+  lines.push(``);
+  lines.push(`local modelName = '${modelName}'`);
+  lines.push(`local existing = Workspace:FindFirstChild(modelName)`);
+  lines.push(`if existing then existing:Destroy() end`);
+  lines.push(``);
+  lines.push(`local model = Instance.new('Model')`);
+  lines.push(`model.Name = modelName`);
+  lines.push(`model.Parent = Workspace`);
+  lines.push(``);
+  lines.push(`local PART_SIZE = Vector3.new(${partSize}, ${partSize}, ${(partSize*0.2).toFixed(2)})`);
+  lines.push(`local WIDTH  = ${w}`);
+  lines.push(`local HEIGHT = ${h}`);
+  lines.push(``);
+
+  if (colorMode === 'color3') {
+    lines.push(`local pixelData = {`);
+    for (let row = 0; row < h; row++) {
+      const cells = rows[row].map(([r,g,b]) => `{${r},${g},${b}}`).join(',');
+      lines.push(`  {${cells}},`);
+    }
+    lines.push(`}`);
+    lines.push(``);
+    lines.push(`for row = 1, HEIGHT do`);
+    lines.push(`  for col = 1, WIDTH do`);
+    lines.push(`    local px = pixelData[row][col]`);
+    lines.push(`    local part = Instance.new('Part')`);
+    lines.push(`    part.Name = 'Px_'..row..'_'..col`);
+    lines.push(`    part.Size = PART_SIZE`);
+    lines.push(`    part.Anchored = true`);
+    lines.push(`    part.TopSurface = Enum.SurfaceType.Smooth`);
+    lines.push(`    part.BottomSurface = Enum.SurfaceType.Smooth`);
+    lines.push(`    part.CastShadow = false`);
+    lines.push(`    part.Material = Enum.Material.SmoothPlastic`);
+    lines.push(`    part.Color = Color3.fromRGB(px[1], px[2], px[3])`);
+    lines.push(`    part.Position = Vector3.new(col * ${partSize}, (HEIGHT - row) * ${partSize}, 0)`);
+    lines.push(`    part.Parent = model`);
+    lines.push(`  end`);
+    lines.push(`  if row % 40 == 0 then task.wait() end`);
+    lines.push(`end`);
+  } else {
+    lines.push(`local pixelData = {`);
+    for (let row = 0; row < h; row++) {
+      const cells = rows[row].map(n => `'${n}'`).join(',');
+      lines.push(`  {${cells}},`);
+    }
+    lines.push(`}`);
+    lines.push(``);
+    lines.push(`for row = 1, HEIGHT do`);
+    lines.push(`  for col = 1, WIDTH do`);
+    lines.push(`    local bc = pixelData[row][col]`);
+    lines.push(`    local part = Instance.new('Part')`);
+    lines.push(`    part.Name = 'Px_'..row..'_'..col`);
+    lines.push(`    part.Size = PART_SIZE`);
+    lines.push(`    part.Anchored = true`);
+    lines.push(`    part.TopSurface = Enum.SurfaceType.Smooth`);
+    lines.push(`    part.BottomSurface = Enum.SurfaceType.Smooth`);
+    lines.push(`    part.CastShadow = false`);
+    lines.push(`    part.Material = Enum.Material.SmoothPlastic`);
+    lines.push(`    part.BrickColor = BrickColor.new(bc)`);
+    lines.push(`    part.Position = Vector3.new(col * ${partSize}, (HEIGHT - row) * ${partSize}, 0)`);
+    lines.push(`    part.Parent = model`);
+    lines.push(`  end`);
+    lines.push(`  if row % 40 == 0 then task.wait() end`);
+    lines.push(`end`);
+  }
+
+  lines.push(``);
+  lines.push(`-- Centrar modelo`);
+  lines.push(`local parts = model:GetDescendants()`);
+  lines.push(`local sumX, sumY, cnt = 0, 0, 0`);
+  lines.push(`for _, obj in ipairs(parts) do`);
+  lines.push(`  if obj:IsA('BasePart') then sumX=sumX+obj.Position.X; sumY=sumY+obj.Position.Y; cnt=cnt+1 end`);
+  lines.push(`end`);
+  lines.push(`if cnt > 0 then`);
+  lines.push(`  local cx, cy = sumX/cnt, sumY/cnt`);
+  lines.push(`  for _, obj in ipairs(parts) do`);
+  lines.push(`    if obj:IsA('BasePart') then obj.Position = obj.Position - Vector3.new(cx, cy, 0) end`);
+  lines.push(`  end`);
+  lines.push(`end`);
+  lines.push(``);
+  lines.push(`print('[RobloxAppImagen] Imagen lista: ' .. modelName .. ' | Partes: ' .. WIDTH*HEIGHT)`);
+
+  generatedScript = lines.join('\n');
+
+  setProgress(90, 'Renderizando vista previa...');
+  await delay(30);
+  updateLivePreview();
+  setProgress(100, 'Listo!');
+  await delay(300);
+  showProgress(false);
+
+  document.getElementById('scriptOutput').value = generatedScript;
+  document.getElementById('step2').classList.add('done');
+  document.getElementById('step3').classList.add('done');
+
+  btn.disabled = false;
+  btn.innerHTML = '<div class="btn-shimmer"></div>✨ Generar Script para Roblox';
+  showToast('Script generado! Ya puedes copiarlo.');
+}
+
+// ================================================================
+// COPY & DOWNLOAD
+// ================================================================
+async function copyScript() {
+  if (!generatedScript) { showToast('Genera el script primero.'); return; }
+  await navigator.clipboard.writeText(generatedScript);
+  const btn = document.getElementById('copyBtn');
+  btn.textContent = '✅ Copiado!';
+  btn.classList.add('success');
+  document.getElementById('step4').classList.add('done');
+  showToast('Script copiado — pégalo en Roblox Studio Command Bar.');
+  setTimeout(() => { btn.textContent = '📋 Copiar'; btn.classList.remove('success'); }, 2500);
+}
+
+function downloadScript() {
+  if (!generatedScript) { showToast('Genera el script primero.'); return; }
+  const name = (document.getElementById('modelName').value || 'roblox') + '_placer.lua';
+  const blob = new Blob([generatedScript], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  showToast('Script descargado como ' + name);
+}
+
+// ================================================================
+// UTILS
+// ================================================================
+function showProgress(visible) {
+  document.getElementById('progressWrap').style.display = visible ? 'block' : 'none';
+}
+function setProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Initial labels
+updateSizeLabel();
+updatePartLabel();
+</script>
+</body>
+</html>
